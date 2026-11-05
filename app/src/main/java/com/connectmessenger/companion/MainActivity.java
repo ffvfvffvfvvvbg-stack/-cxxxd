@@ -1,0 +1,12 @@
+package com.connectmessenger.companion;
+import android.app.*;import android.os.*;import android.content.*;import android.media.projection.*;import android.provider.Settings;import android.widget.*;
+public class MainActivity extends Activity {
+ static final int REQ=4207; MediaProjectionManager pm; LinearLayout box; TextView status;
+ public void onCreate(Bundle b){super.onCreate(b);pm=(MediaProjectionManager)getSystemService(MEDIA_PROJECTION_SERVICE);box=new LinearLayout(this);box.setOrientation(1);box.setPadding(28,40,28,24);box.setBackgroundColor(0xfff3f7fb);TextView t=new TextView(this);t.setText("Connect Messenger");t.setTextSize(28);t.setTextColor(0xff172b4d);box.addView(t);status=new TextView(this);status.setText("Device ready\nBackend: not configured\nScreen sharing: off");status.setPadding(8,24,8,24);box.addView(status);
+ add("Connect account",v->new AlertDialog.Builder(this).setMessage("Account pairing requires the HTTPS backend and WebSocket service, which are not configured yet.").setPositiveButton("OK",null).show());
+ add("Enable Accessibility assistance",v->new AlertDialog.Builder(this).setMessage("You must manually enable the optional assistance service in Android Settings.").setNegativeButton("Cancel",null).setPositiveButton("Open Settings",(d,w)->startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS))).show());
+ add("Start screen sharing",v->new AlertDialog.Builder(this).setMessage("Android will ask for screen-capture consent. Nothing starts unless you approve. Live web streaming needs backend/WebRTC setup.").setNegativeButton("Cancel",null).setPositiveButton("Continue",(d,w)->startActivityForResult(pm.createScreenCaptureIntent(),REQ)).show());
+ add("Stop screen sharing",v->{stopService(new Intent(this,ScreenCaptureService.class));status.setText("Screen sharing: off");});setContentView(box);}
+ void add(String s,android.view.View.OnClickListener l){Button b=new Button(this);b.setText(s);b.setAllCaps(false);b.setOnClickListener(l);box.addView(b);}
+ protected void onActivityResult(int r,int c,Intent data){super.onActivityResult(r,c,data);if(r==REQ){if(c==RESULT_OK&&data!=null){Intent i=new Intent(this,ScreenCaptureService.class);i.putExtra(ScreenCaptureService.CODE,c);i.putExtra(ScreenCaptureService.DATA,data);if(Build.VERSION.SDK_INT>=26)startForegroundService(i);else startService(i);status.setText("Projection approved; local session active. Web streaming not configured.");}else status.setText("Screen sharing not approved.");}}
+}

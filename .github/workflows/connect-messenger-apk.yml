@@ -1,0 +1,30 @@
+name: Build Connect Messenger APK
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths: ['connect-messenger/**', '.github/workflows/connect-messenger-apk.yml']
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '17'}
+      - uses: android-actions/setup-android@v4
+        with:
+          accept-android-sdk-licenses: true
+          log-accepted-android-sdk-licenses: false
+          packages: platform-tools
+      - uses: gradle/actions/setup-gradle@v4
+        with: {gradle-version: '8.9'}
+      - run: gradle -p connect-messenger assembleDebug --no-daemon --stacktrace
+      - run: test -s connect-messenger/app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: connect-messenger-debug-apk
+          path: connect-messenger/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14
